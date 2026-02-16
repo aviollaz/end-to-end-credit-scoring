@@ -1,0 +1,17 @@
+venv/
+ENV/
+.env
+
+__pycache__/
+*.py[cod]
+*$py.class
+
+.ipynb_checkpoints
+
+*.db
+*.sqlite3
+
+.vscode/
+.idea/
+
+data/
