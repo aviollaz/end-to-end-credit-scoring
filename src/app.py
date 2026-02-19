@@ -4,7 +4,7 @@ import  pandas as pd
 import matplotlib.pyplot as plt
 import os
 
-st.title("Credit Risk Calculator")
+st.title("Credit Risk Assessment")
 st.markdown("Defaulting Risk evaluation based on smart features.")
 
 model_dir = "models/credit_score_model.pkl"
@@ -21,9 +21,9 @@ except:
 # ---------------------------------------------------------------
 
 region_options = {
-    "Level 3: High-income/Low-risk Region": 3,
+    "Level 1: High-income/Low-risk Region": 1,
     "Level 2: Average Region": 2,
-    "Level 1: Low-income/High-risk Region": 1
+    "Level 3: Low-income/High-risk Region": 3
 }
 
 retired_options = {
@@ -36,7 +36,6 @@ st.sidebar.header("Applicant Information")
 
 credit = st.sidebar.number_input("Total Credit Amount ($)", value=15000, step=1000)
 annuity = st.sidebar.number_input("Annual Loan Installment ($)", value=5000, step=500)
-age = st.sidebar.slider("Age (Years)", 18, 90, 30)
 years_employed = st.sidebar.number_input("Years Employed", value=5)
 children = st.sidebar.number_input("Number of Children", value=0)
 income = st.sidebar.number_input("Total Annual Income ($)", value=50000, step=1000)
@@ -94,7 +93,6 @@ input_df = pd.DataFrame([[
 
 # ---------------------------------------------------------------
 
-st.title("BBVA Credit Risk Assessment")
 st.markdown("""
 This dashboard uses an **XGBoost** model to predict the probability of default. 
 It converts that probability into a **Credit Score** (0-1000).
