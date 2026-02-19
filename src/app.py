@@ -7,8 +7,6 @@ import os
 st.title("Credit Risk Calculator")
 st.markdown("Defaulting Risk evaluation based on smart features.")
 
-# root_dir = os.path.dirname(os.getcwd()) 
-# model_dir = os.path.join(root_dir, "models", "credit_score_model.pkl")
 model_dir = "models/credit_score_model.pkl"
 
 @st.cache_resource
@@ -23,9 +21,14 @@ except:
 # ---------------------------------------------------------------
 
 region_options = {
-    "Level 1: High-income/Low-risk Region": 1,
+    "Level 3: High-income/Low-risk Region": 3,
     "Level 2: Average Region": 2,
-    "Level 3: Low-income/High-risk Region": 3
+    "Level 1: Low-income/High-risk Region": 1
+}
+
+retired_options = {
+    "Yes": 1,
+    "No": 0
 }
 
 st.sidebar.header("Applicant Information")
@@ -39,7 +42,7 @@ children = st.sidebar.number_input("Number of Children", value=0)
 income = st.sidebar.number_input("Total Annual Income ($)", value=50000, step=1000)
 goods_price = st.sidebar.number_input("Goods Price ($)", value=15000, step=1000)
 selected_region = st.sidebar.selectbox("Region Rating", options=list(region_options.keys()))
-
+retired_value = st.sidebar.selectbox("Are you retired?", options=list(retired_options.keys()))
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("External Credit Scores")
@@ -54,40 +57,44 @@ payment_rate = annuity / income
 credit_goods_ratio = credit / goods_price
 credit_downpayment = goods_price - credit
 region_rating = region_options[selected_region]
+retired = retired_options[retired_value]
+
 
 # ---------------------------------------------------------------
-
+# 'AMT_CREDIT', 'AMT_ANNUITY', 'AGE', 'YEARS_EMPLOYED_CLEAN', 
+# 'INCOME_PER_CHILD', 'PAYMENT_RATE', 'CREDIT_GOODS_RATIO', 'CREDIT_DOWNPAYMENT'
+# 'EXT_SOURCE_1', 'EXT_SOURCE_2', 'EXT_SOURCE_3', 'REGION_RATING_CLIENT'
 input_df = pd.DataFrame([[
     credit, 
     annuity, 
-    age,
     years_employed,
+    income_per_child,
+    payment_rate,
+    credit_goods_ratio, 
+    credit_downpayment,
     ext_1, 
     ext_2,
     ext_3,
-    income_per_child,
-    payment_rate,
     region_rating,
-    credit_goods_ratio, 
-    credit_downpayment
+    retired
 ]], columns=[
     'AMT_CREDIT',
     'AMT_ANNUITY',
-    'AGE',
-    'YEARS_EMPLOYED',
+    'YEARS_EMPLOYED_CLEAN',
+    'INCOME_PER_CHILD',
+    'PAYMENT_RATE',
+    'CREDIT_GOODS_RATIO',
+    'CREDIT_DOWNPAYMENT',
     'EXT_SOURCE_1',
     'EXT_SOURCE_2',
     'EXT_SOURCE_3',
-    'INCOME_PER_CHILD',
-    'PAYMENT_RATE',
     'REGION_RATING_CLIENT',
-    'CREDIT_GOODS_RATIO',
-    'CREDIT_DOWNPAYMENT'
+    'IS_RETIRED'
 ])
 
 # ---------------------------------------------------------------
 
-st.title("🏦 BBVA Credit Risk Assessment")
+st.title("BBVA Credit Risk Assessment")
 st.markdown("""
 This dashboard uses an **XGBoost** model to predict the probability of default. 
 It converts that probability into a **Credit Score** (0-1000).
@@ -95,12 +102,18 @@ It converts that probability into a **Credit Score** (0-1000).
 
 if st.button("Calculate Credit Score"):
     # Get Probability
-    prob_default = model.predict_proba(input_df)[0, 1]
+    prob = model.predict_proba(input_df)[0, 1]
     
-    # Calculate Score
-    # Higher Score = Lower Risk
-    credit_score = int((1 - prob_default) * 1000)
-    
+    max_observed_prob = 0.9640
+    min_observed_prob = 0.01
+
+    # Normalization formula:
+    # We map the range [0.01, 0.45] to [1000, 0]
+    adjusted_score = 1000 * (1 - (prob - min_observed_prob) / (max_observed_prob - min_observed_prob))
+    credit_score = int(max(0, min(1000, adjusted_score)))
+
+
+
     # Display Results
     st.divider()
     col1, col2 = st.columns(2)
@@ -119,11 +132,11 @@ if st.button("Calculate Credit Score"):
         # Local Insights
         st.write("### Key Risk Factors")
         if payment_rate > 0.4:
-            st.write("⚠️ **High Debt-to-Income:** Installment exceeds 40% of income.")
+            st.write("**High Debt-to-Income:** Installment exceeds 40% of income.")
         if ext_3 < 0.3:
-            st.write("⚠️ **Low External Rating:** Third-party bureaus report high risk.")
+            st.write("**Low External Rating:** Third-party bureaus report high risk.")
         if credit_score > 500:
-            st.write("✅ **Solid Applicant Profile:** Financial indicators are stable.")
+            st.write("**Solid Applicant Profile:** Financial indicators are stable.")
 
 # 5. Feature Importance Visualization
     st.divider()
