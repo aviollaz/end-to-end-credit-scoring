@@ -54,7 +54,7 @@ After testing multiple algorithms (Logistic Regression, Random Forest, LightGBM)
     ```
 3.  **Run the Dashboard:**
     ```bash
-    streamlit run app.py
+    streamlit run src/app.py
     ```
 
 ---
