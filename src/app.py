@@ -1,22 +1,25 @@
 import streamlit as st
 import joblib
-import  pandas as pd
+import pandas as pd
+from pathlib import Path
 import matplotlib.pyplot as plt
 import os
 
 st.title("Credit Risk Assessment")
 st.markdown("Defaulting Risk evaluation based on smart features.")
 
-model_dir = "models/credit_score_model.pkl"
+BASE_DIR = Path(__file__).resolve().parent.parent
+model_dir = BASE_DIR / "models" / "credit_score_model.pkl"
 
 @st.cache_resource
 def load_model():
-    return joblib.load(model_dir)
+    return joblib.load(str(model_dir))
 
 try:
     model = load_model()
-except:
-    st.error(f"Model file 'credit_score_model.pkl' not found. model_dir: **{model_dir}**")
+except Exception as e:
+    st.error(f"Actual Error: {e}")
+    st.write(f"Model file 'credit_score_model.pkl' not found. model_dir: **{model_dir}**")
 
 # ---------------------------------------------------------------
 
