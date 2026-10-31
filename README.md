@@ -1,70 +1,63 @@
-## README.md
+# End-to-End Credit Scoring
 
-# End-to-End Credit Scoring Pipeline
+A machine learning pipeline that predicts whether a loan applicant will default, from
+raw data to an interactive dashboard. It is trained on Kaggle's
+[Home Credit Default Risk](https://www.kaggle.com/competitions/home-credit-default-risk)
+dataset (about 307,000 applications, 8% of which defaulted) and served through a
+**Streamlit** app that turns the model's probability into a 0–1000 credit score.
 
-Full-stack machine learning solution for assessing credit risk. The project transforms raw financial data from Kaggle into a deployable **XGBoost**-powered dashboard that calculates credit scores and classifies loan applications.
+## Results
 
-The pipeline covers everything from deep Exploratory Data Analysis and feature engineering to a live interactive interface built with **Streamlit**.
+Defaulters are the minority class, so the models are trained with class weighting and
+judged by **recall on defaulters**: missing a borrower who will default costs more
+than sending a good one to manual review. Evaluated on a 20% hold-out set
+(61,503 applications):
 
----
+| Model | Recall (default) | Precision (default) | Accuracy |
+|---|---|---|---|
+| Logistic Regression | 0.65 | 0.15 | 0.68 |
+| Random Forest | 0.62 | 0.16 | 0.71 |
+| **XGBoost (deployed)** | **0.66** | **0.16** | **0.70** |
 
-## 🛠️ The Pipeline
+XGBoost catches two out of every three defaulters while still approving 70% of good borrowers.
+Low precision on the default class is expected at an 8% base rate: the model is meant
+to flag applications for review, not to reject them automatically.
 
-### 1. Data Cleaning & EDA
-* **Missing Value Imputation:** Handled nulls in external sources and demographic data.
-* **Outlier Detection:** Identified and capped anomalies in income and employment duration.
-* **Correlation Analysis:** Filtered redundant features to reduce model noise.
+## Pipeline
 
-### 2. Feature Engineering
-Created "Smart Features" that capture the financial health of the borrower more effectively than raw variables:
-* **Payment Rate:** Relationship between annual installments and total income.
-* **Income per Child:** Adjusted disposable income based on family size.
-* **Credit/Goods Ratio:** Percentage of the item price being financed.
-* **Retirement Status:** Categorical encoding for employment stability.
+All of the analysis lives in [`notebooks/notebook.ipynb`](notebooks/notebook.ipynb).
 
-### 3. Modeling & Evaluation
-After testing multiple algorithms (Logistic Regression, Random Forest, LightGBM), **XGBoost** was selected for its superior performance.
-* **Metric Focus:** Optimized for **ROC-AUC** and **Gini** to ensure clear separation between "Good" and "Bad" borrowers.
-* **Calibration:** Probabilities are mapped to a human-readable **0–1000 Credit Score** scale.
+1. **Exploratory analysis.** Correlation of every numeric feature with default, and
+   distributions of age, employment length, income, credit amount and annuity.
+2. **Data cleaning.** The dataset encodes retirees as `DAYS_EMPLOYED = 365243`. Instead
+   of imputing those with the median (which would give retirees 4–5 years of fake work
+   history), they become `0` years employed plus an explicit `IS_RETIRED` flag.
+   Remaining missing values are filled with the median.
+3. **Feature engineering.** Ratios that describe a borrower's financial situation better
+   than raw amounts:
+   - **Payment rate:** annual installment over income.
+   - **Income per child:** income adjusted for family size.
+   - **Credit/goods ratio** and **down payment:** how much of the purchase is financed.
+4. **Modeling.** Logistic Regression, Random Forest and XGBoost, all with class
+   weighting for the imbalance (`class_weight='balanced'`, `scale_pos_weight`).
+5. **Scoring.** The deployed app maps the default probability linearly onto a
+   0–1000 score.
 
----
+## Dashboard
 
-## 💻 Tech Stack
+```bash
+pip install -r requirements.txt
+streamlit run src/app.py
+```
 
-* **Core:** Python (Pandas, NumPy)
-* **ML Framework:** XGBoost, Scikit-learn
-* **App/UI:** Streamlit
-* **Visualization:** Matplotlib, Seaborn
+- Enter an applicant's details in the sidebar and get a score instantly.
+- **700+** approved (low risk), **400–699** manual review, **below 400** rejected.
+- A feature-importance chart shows which variables drive the model's decisions.
 
----
+The trained model is included in `models/credit_score_model.pkl`, so the dashboard
+runs without the dataset. To re-run the notebook, download `application_train.csv`
+from Kaggle into `data/home-credit-default-risk/`.
 
-### Prerequisites
-* Python 3.9+
-* `pip` or `conda`
+## Tech stack
 
-### Installation
-1.  **Clone the repo:**
-    ```bash
-    git clone https://github.com/aviollaz/end-to-end-credit-scoring.git
-    cd end-to-end-credit-scoring
-    ```
-2.  **Install dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-3.  **Run the Dashboard:**
-    ```bash
-    streamlit run src/app.py
-    ```
-
----
-
-## 📊 Dashboard Features
-
-* **Real-time Prediction:** Adjust sliders and input fields to see instant score updates.
-* **Risk Categorization:** * 🟢 **700+**: Approved (Low Risk)
-    * 🟡 **400–699**: Manual Review (Medium Risk)
-    * 🔴 **<400**: Rejected (High Risk)
-* **Model Explainability:** A horizontal bar chart visualizes the global feature importance, showing which variables (like External Scores or Payment Rates) are driving the model's decisions.
----
-*Developed by André Viollaz - Computer Science Student @ UBA*
+Python, pandas, NumPy, scikit-learn, XGBoost, Streamlit, Matplotlib, Seaborn.
