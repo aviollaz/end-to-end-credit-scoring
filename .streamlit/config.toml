@@ -1,0 +1,17 @@
+[theme]
+base = "dark"
+primaryColor = "#9147ff"
+backgroundColor = "#0e0e10"
+secondaryBackgroundColor = "#18181b"
+textColor = "#efeff1"
+linkColor = "#bf94ff"
+borderColor = "#2f2f35"
+redColor = "#eb0400"
+greenColor = "#00f593"
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+headingFont = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+baseRadius = "medium"
+buttonRadius = "full"
+
+[theme.sidebar]
+backgroundColor = "#1f1f23"

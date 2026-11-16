@@ -21,7 +21,7 @@ than sending a good one to manual review. Evaluated on a 20% hold-out set
 
 XGBoost catches two out of every three defaulters while still approving 70% of good borrowers.
 Low precision on the default class is expected at an 8% base rate: the model is meant
-to flag applications for review, not to reject them automatically.
+to flag applications for review, not to reject them automatically. Its **ROC-AUC is 0.746**.
 
 ## Pipeline
 
@@ -40,8 +40,21 @@ All of the analysis lives in [`notebooks/notebook.ipynb`](notebooks/notebook.ipy
    - **Credit/goods ratio** and **down payment:** how much of the purchase is financed.
 4. **Modeling.** Logistic Regression, Random Forest and XGBoost, all with class
    weighting for the imbalance (`class_weight='balanced'`, `scale_pos_weight`).
-5. **Scoring.** The deployed app maps the default probability linearly onto a
-   0–1000 score.
+   XGBoost is trained on the raw (unscaled) features: trees don't need scaling, and the
+   dashboard feeds it raw values, so training and serving see the same inputs.
+5. **Calibration.** Class weighting makes the model count each default ~11 times, which
+   inflates its probabilities (average prediction 41% vs. a real default rate of 8%).
+   A Platt scaler fitted on the logit of the predictions, using half of the hold-out set
+   and evaluated on the other half, brings them back to real frequencies:
+
+   | | ROC-AUC | Brier score | Mean predicted default |
+   |---|---|---|---|
+   | Raw model | 0.747 | 0.196 | 41.2% |
+   | **Calibrated** | 0.747 | **0.068** | **8.0%** (real: 8.05%) |
+
+   Calibration doesn't change the ranking of applicants, only how the probability reads.
+6. **Scoring.** The dashboard maps the model's raw probability linearly onto a
+   0–1000 score, and shows the calibrated probability of default next to it.
 
 ## Dashboard
 
@@ -50,14 +63,19 @@ pip install -r requirements.txt
 streamlit run src/app.py
 ```
 
-- Enter an applicant's details in the sidebar and get a score instantly.
+- Enter an applicant's details in the sidebar and the score updates instantly. Inputs
+  start at the dataset's median applicant.
 - **700+** approved (low risk), **400–699** manual review, **below 400** rejected.
-- A feature-importance chart shows which variables drive the model's decisions.
+- The calibrated **probability of default** is shown next to the score.
+- A **SHAP** chart explains each individual score: which inputs push the risk up and
+  which push it down. A global feature-importance chart is available below it.
+- Dark theme with a Twitch-inspired palette (`.streamlit/config.toml`).
 
 The trained model is included in `models/credit_score_model.pkl`, so the dashboard
 runs without the dataset. To re-run the notebook, download `application_train.csv`
-from Kaggle into `data/home-credit-default-risk/`.
+from Kaggle into `data/home-credit-default-risk/` (you need to accept the competition
+rules on Kaggle first).
 
 ## Tech stack
 
-Python, pandas, NumPy, scikit-learn, XGBoost, Streamlit, Matplotlib, Seaborn.
+Python, pandas, NumPy, scikit-learn, XGBoost, SHAP, Streamlit, Matplotlib, Seaborn.
