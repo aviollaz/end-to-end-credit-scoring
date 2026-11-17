@@ -1,5 +1,7 @@
 # End-to-End Credit Scoring
 
+Live Demo: https://credit-score-assessment.streamlit.app/
+
 A machine learning pipeline that predicts whether a loan applicant will default, from
 raw data to an interactive dashboard. It is trained on Kaggle's
 [Home Credit Default Risk](https://www.kaggle.com/competitions/home-credit-default-risk)
