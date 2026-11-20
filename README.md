@@ -8,6 +8,21 @@ raw data to an interactive dashboard. It is trained on Kaggle's
 dataset (about 307,000 applications, 8% of which defaulted) and served through a
 **Streamlit** app that turns the model's probability into a 0–1000 credit score.
 
+<p align="center">
+  <img src="docs/dashboard.png" width="900" alt="Credit Risk Assessment dashboard: score 627 out of 1000, 5% probability of default, decision Review, and a SHAP chart explaining which inputs raise or lower the risk">
+  <br><sub>The dashboard: the score, the calibrated probability of default, the decision band, and a SHAP
+  explanation of which inputs push this applicant's risk up or down.</sub>
+</p>
+
+```mermaid
+flowchart LR
+    A[(Home Credit<br/>307k applications)] --> B[Cleaning<br/>retiree flag, medians]
+    B --> C[Feature engineering<br/>payment rate, income per child,<br/>credit/goods, down payment]
+    C --> D[Models<br/>LogReg · RF · XGBoost<br/>class-weighted]
+    D --> E[Platt calibration<br/>41% → 8% mean prediction]
+    E --> F[Streamlit dashboard<br/>0–1000 score + SHAP]
+```
+
 ## Results
 
 Defaulters are the minority class, so the models are trained with class weighting and
